@@ -422,6 +422,270 @@
     #printArea, #printArea *{visibility:visible;}
     #printArea{position:absolute; top:0; left:0; width:100%; box-shadow:none; border:none;}
   }
+
+  /* =========================================================================
+     IA — Etapa 1: interface de botões, modais, telas de perguntas e animações.
+     Nesta etapa NADA aqui chama uma API externa — todo o conteúdo é simulado
+     (mock) apenas para validar a experiência antes da integração real.
+  ========================================================================= */
+  :root{
+    --ai-1:#8B5CF6;
+    --ai-2:#2F5FFF;
+    --ai-soft:#F1EEFF;
+    --ai-line:#DCD3FF;
+    --ai-shadow: 0 14px 30px -12px rgba(139,92,246,0.5);
+  }
+
+  /* ---- Botão "melhorar/gerar com IA" (usado dentro do formulário) ---- */
+  .ai-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg, var(--ai-1), var(--ai-2));
+    color:#fff; font-size:12.5px; font-weight:700; font-family:'Inter',sans-serif;
+    padding:10px 16px; border-radius:9px; margin-top:10px;
+    box-shadow:var(--ai-shadow);
+    position:relative; overflow:hidden; isolation:isolate;
+    transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  .ai-btn::after{
+    content:""; position:absolute; top:0; left:-60%; width:40%; height:100%; z-index:1;
+    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform:skewX(-18deg);
+    animation:ai-shimmer 3.4s ease-in-out infinite;
+  }
+  .ai-btn span, .ai-btn svg{position:relative; z-index:2;}
+  .ai-btn:hover{transform:translateY(-2px); box-shadow:0 18px 36px -12px rgba(139,92,246,0.6); filter:brightness(1.06);}
+  .ai-btn:active{transform:translateY(0);}
+  .ai-btn-block{width:100%; justify-content:center;}
+  .ai-btn-outline{
+    background:rgba(139,92,246,0.12); color:#C9BBFF; box-shadow:none;
+    border:1px dashed rgba(139,92,246,0.55);
+  }
+  .ai-btn-outline::after{display:none;}
+  .ai-btn-outline:hover{background:rgba(139,92,246,0.2); transform:translateY(-2px);}
+  .ai-sparkle{animation:ai-sparkle-spin 3.2s linear infinite; transform-origin:center;}
+  @keyframes ai-shimmer{
+    0%{left:-60%;} 45%{left:130%;} 100%{left:130%;}
+  }
+  @keyframes ai-sparkle-spin{
+    0%{transform:rotate(0deg) scale(1);}
+    50%{transform:rotate(180deg) scale(1.15);}
+    100%{transform:rotate(360deg) scale(1);}
+  }
+
+  /* ---- Botão flutuante (FAB) de revisão geral com IA ---- */
+  .ai-fab{
+    position:fixed; right:24px; bottom:24px; z-index:85;
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(135deg, var(--ai-1), var(--ai-2));
+    color:#fff; padding:16px 22px 16px 18px; border-radius:999px; border:none;
+    font-size:14px; font-weight:700; font-family:'Inter',sans-serif;
+    box-shadow:0 18px 40px -14px rgba(139,92,246,0.65);
+    opacity:0; transform:translateY(18px) scale(.92); pointer-events:none;
+    transition:opacity .35s ease, transform .35s ease, filter .15s ease;
+  }
+  .ai-fab.visible{opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
+  .ai-fab:hover{filter:brightness(1.08); transform:translateY(-3px) scale(1.02);}
+  .ai-fab-ring{
+    position:absolute; inset:-8px; border-radius:999px; pointer-events:none;
+    border:2px solid rgba(139,92,246,0.5);
+    animation:ai-fab-pulse 2.4s ease-out infinite;
+  }
+  @keyframes ai-fab-pulse{
+    0%{transform:scale(.88); opacity:.85;}
+    70%{transform:scale(1.4); opacity:0;}
+    100%{opacity:0;}
+  }
+  .ai-fab-icon{display:flex; width:20px; height:20px; flex-shrink:0;}
+  @media (max-width:560px){
+    .ai-fab-label{display:none;}
+    .ai-fab{padding:16px; border-radius:50%;}
+  }
+
+  /* ---- Overlay + modal ---- */
+  body.ai-modal-lock{overflow:hidden;}
+  .ai-modal-overlay{
+    position:fixed; inset:0; z-index:300;
+    background:rgba(11,18,41,0.55); backdrop-filter:blur(5px);
+    display:flex; align-items:center; justify-content:center; padding:22px;
+    opacity:0; pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .ai-modal-overlay.open{opacity:1; pointer-events:auto;}
+  .ai-modal{
+    width:100%; max-width:580px; max-height:min(700px, 88vh);
+    background:#fff; border-radius:20px; overflow:hidden;
+    box-shadow:0 50px 90px -20px rgba(11,18,41,0.5);
+    display:flex; flex-direction:column;
+    transform:translateY(22px) scale(.96); opacity:0;
+    transition:transform .32s cubic-bezier(.2,.8,.25,1), opacity .28s ease;
+  }
+  .ai-modal-overlay.open .ai-modal{transform:translateY(0) scale(1); opacity:1;}
+  .ai-modal-head{
+    display:flex; align-items:flex-start; gap:14px;
+    padding:24px 26px 18px; border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  .ai-modal-icon{
+    width:42px; height:42px; border-radius:11px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--ai-1), var(--ai-2));
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    box-shadow:var(--ai-shadow);
+  }
+  .ai-modal-headtext{flex:1; min-width:0;}
+  .ai-modal-title{font-family:'Sora',sans-serif; font-size:17.5px; font-weight:800; color:var(--ink); line-height:1.25;}
+  .ai-modal-subtitle{font-size:13px; color:var(--ink-soft); margin-top:3px; line-height:1.45;}
+  .ai-modal-steps{display:flex; gap:5px; margin-top:10px;}
+  .ai-modal-step-dot{height:4px; width:24px; border-radius:3px; background:var(--line); transition:background .25s ease;}
+  .ai-modal-step-dot.active{background:linear-gradient(90deg, var(--ai-1), var(--ai-2));}
+  .ai-modal-step-dot.done{background:var(--mint);}
+  .ai-modal-close{
+    background:#F2F3F8; color:var(--ink-soft); width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:16px; transition:background .15s, color .15s;
+  }
+  .ai-modal-close:hover{background:#E7E9F3; color:var(--ink);}
+  .ai-modal-body{padding:22px 26px; overflow-y:auto; flex:1;}
+  .ai-modal-foot{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:16px 26px 22px; border-top:1px solid var(--line); flex-shrink:0;
+  }
+  .ai-modal-foot-right{display:flex; gap:10px; margin-left:auto;}
+  .ai-btn-primary-modal, .ai-btn-ghost-modal{
+    padding:11px 20px; border-radius:9px; font-size:13.5px; font-weight:700; transition:transform .15s, box-shadow .15s, filter .15s, background .15s, border-color .15s;
+  }
+  .ai-btn-primary-modal{
+    background:linear-gradient(135deg, var(--ai-1), var(--ai-2)); color:#fff; box-shadow:var(--ai-shadow);
+  }
+  .ai-btn-primary-modal:hover:not(:disabled){transform:translateY(-1px); filter:brightness(1.06);}
+  .ai-btn-primary-modal:disabled{opacity:.45; cursor:not-allowed; box-shadow:none;}
+  .ai-btn-ghost-modal{
+    background:transparent; color:var(--ink-soft); border:1.5px solid var(--line);
+  }
+  .ai-btn-ghost-modal:hover{border-color:var(--ink); color:var(--ink);}
+
+  /* ---- Etapas dentro do modal (perguntas / loading / resultado) ---- */
+  .ai-step{display:none;}
+  .ai-step.active{display:block; animation:ai-step-in .32s ease;}
+  @keyframes ai-step-in{from{opacity:0; transform:translateX(14px);} to{opacity:1; transform:translateX(0);}}
+
+  .ai-field{margin-bottom:16px;}
+  .ai-field label{
+    display:block; font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;
+    font-family:'JetBrains Mono',monospace; letter-spacing:.03em; text-transform:uppercase;
+  }
+  .ai-field-hint{display:block; font-size:12px; color:#8992AC; margin:-2px 0 8px; font-weight:400;}
+  .ai-field input, .ai-field textarea{
+    width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid var(--line);
+    font-size:14px; font-family:'Inter',sans-serif; color:var(--ink); background:#fff;
+  }
+  .ai-field input:focus, .ai-field textarea:focus{border-color:var(--ai-1); outline:none;}
+  .ai-field textarea{resize:vertical; min-height:70px;}
+
+  .ai-pill-row, .ai-check-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;}
+  .ai-pill{
+    border:1.5px solid var(--line); background:#fff; padding:9px 15px; border-radius:999px;
+    font-size:12.5px; font-weight:600; color:var(--ink-soft); transition:all .15s ease;
+  }
+  .ai-pill:hover{border-color:#C9C2FF;}
+  .ai-pill.selected{border-color:var(--ai-1); background:var(--ai-soft); color:var(--ai-1);}
+  .ai-check-pill{
+    border:1.5px solid var(--line); background:#fff; padding:9px 15px; border-radius:999px;
+    font-size:12.5px; font-weight:600; color:var(--ink-soft); transition:all .15s ease;
+    display:inline-flex; align-items:center; gap:7px;
+  }
+  .ai-check-pill:hover{border-color:#C9C2FF;}
+  .ai-check-pill.selected{border-color:var(--ai-1); background:var(--ai-soft); color:var(--ai-1);}
+  .ai-check-pill .box{
+    width:15px; height:15px; border-radius:4px; border:1.5px solid var(--line); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:all .15s ease;
+  }
+  .ai-check-pill.selected .box{background:var(--ai-1); border-color:var(--ai-1);}
+
+  /* ---- Tela de carregamento (loading) ---- */
+  .ai-loading{display:flex; flex-direction:column; align-items:center; text-align:center; padding:20px 8px 8px;}
+  .ai-loading-ring{
+    width:64px; height:64px; border-radius:50%;
+    border:5px solid var(--ai-soft); border-top-color:var(--ai-1);
+    animation:ai-spin .85s linear infinite; margin-bottom:20px;
+  }
+  @keyframes ai-spin{to{transform:rotate(360deg);}}
+  .ai-loading-status{font-size:14.5px; font-weight:700; color:var(--ink); min-height:20px; transition:opacity .2s ease;}
+  .ai-loading-sub{font-size:12.5px; color:var(--ink-soft); margin-top:5px;}
+  .ai-loading-bar-track{width:100%; max-width:300px; height:6px; background:#EEF1F9; border-radius:3px; margin-top:20px; overflow:hidden;}
+  .ai-loading-bar-fill{height:100%; width:4%; background:linear-gradient(90deg, var(--ai-1), var(--ai-2)); border-radius:3px; transition:width .5s ease;}
+
+  .ai-check-list{display:flex; flex-direction:column; gap:11px; margin-top:22px; text-align:left; width:100%; max-width:300px;}
+  .ai-check-item{display:flex; align-items:center; gap:10px; font-size:13.5px; color:#B7BECF; transition:color .3s ease;}
+  .ai-check-item.done{color:var(--ink); font-weight:600;}
+  .ai-check-circle{
+    width:20px; height:20px; border-radius:50%; border:2px solid var(--line); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:border-color .3s ease, background .3s ease;
+  }
+  .ai-check-item.done .ai-check-circle{background:var(--mint); border-color:var(--mint);}
+  .ai-check-circle svg{opacity:0; transform:scale(.3); transition:opacity .2s ease, transform .2s ease;}
+  .ai-check-item.done .ai-check-circle svg{opacity:1; transform:scale(1);}
+
+  /* ---- Cartões de opções geradas (resultado) ---- */
+  .ai-option-card{
+    border:1.5px solid var(--line); border-radius:13px; padding:16px 16px 15px;
+    margin-bottom:11px; cursor:pointer; transition:border-color .15s, background .15s, box-shadow .15s;
+    animation:ai-step-in .35s ease both;
+  }
+  .ai-option-card:nth-child(2){animation-delay:.06s;}
+  .ai-option-card:nth-child(3){animation-delay:.12s;}
+  .ai-option-card:hover{border-color:#C9C2FF; background:#FBFAFF;}
+  .ai-option-card.selected{border-color:var(--ai-1); background:var(--ai-soft); box-shadow:0 0 0 3px rgba(139,92,246,0.14);}
+  .ai-option-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;}
+  .ai-option-badge{
+    font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; text-transform:uppercase;
+    color:var(--ai-1); background:var(--ai-soft); padding:3px 8px; border-radius:5px; letter-spacing:.03em;
+  }
+  .ai-option-radio{width:19px; height:19px; border-radius:50%; border:2px solid var(--line); flex-shrink:0; position:relative;}
+  .ai-option-card.selected .ai-option-radio{border-color:var(--ai-1);}
+  .ai-option-card.selected .ai-option-radio::after{
+    content:""; position:absolute; inset:3px; border-radius:50%; background:var(--ai-1);
+  }
+  .ai-option-text{font-size:13.5px; line-height:1.6; color:var(--ink-soft); white-space:pre-line;}
+
+  .ai-skill-suggest{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;}
+
+  /* ---- Resultado da revisão geral (score + dicas) ---- */
+  .ai-score-wrap{display:flex; flex-direction:column; align-items:center; padding:4px 0 18px;}
+  .ai-score-ring circle{transition:stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1);}
+  .ai-score-value{font-family:'Sora',sans-serif; font-weight:800; font-size:28px; fill:var(--ink);}
+  .ai-score-label{font-size:12.5px; color:var(--ink-soft); margin-top:8px; font-weight:600;}
+
+  .ai-tip{display:flex; gap:12px; padding:13px 0; border-bottom:1px solid var(--line);}
+  .ai-tip:last-child{border-bottom:none;}
+  .ai-tip-icon{width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .ai-tip-icon.ok{background:#E7FBF3; color:#0FA76C;}
+  .ai-tip-icon.warn{background:#FFF4E0; color:#B8790F;}
+  .ai-tip-title{font-size:13.5px; font-weight:700; color:var(--ink);}
+  .ai-tip-desc{font-size:12.5px; color:var(--ink-soft); margin-top:2px; line-height:1.5;}
+  .ai-tip-jump{font-size:12px; font-weight:700; color:var(--ai-1); margin-top:7px; display:inline-block;}
+  .ai-tip-jump:hover{text-decoration:underline;}
+
+  /* ---- Toast (notificação de sucesso) ---- */
+  .ai-toast-container{
+    position:fixed; top:18px; right:18px; z-index:400;
+    display:flex; flex-direction:column; gap:10px; max-width:320px;
+  }
+  .ai-toast{
+    background:var(--ink); color:#fff; padding:13px 16px; border-radius:11px; font-size:13.5px; font-weight:600;
+    display:flex; align-items:center; gap:10px; box-shadow:0 16px 34px -10px rgba(0,0,0,0.45);
+    transform:translateX(130%); opacity:0; transition:transform .35s ease, opacity .35s ease;
+  }
+  .ai-toast.show{transform:translateX(0); opacity:1;}
+  .ai-toast-check{
+    width:21px; height:21px; border-radius:50%; background:var(--mint); display:flex; align-items:center;
+    justify-content:center; flex-shrink:0;
+  }
+
+  @media (max-width:560px){
+    .ai-modal{border-radius:16px;}
+    .ai-modal-head{padding:20px 18px 16px;}
+    .ai-modal-body{padding:18px;}
+    .ai-modal-foot{padding:14px 18px 18px; flex-wrap:wrap;}
+    .ai-toast-container{left:14px; right:14px; max-width:none;}
+  }
 </style>
 </head>
 <body>
@@ -617,7 +881,7 @@
 
           <div class="photo-row">
             <div class="photo-preview" id="photoPreview">
-              <span id="photoInitials">JA</span>
+              <span id="photoInitials">FOTO</span>
             </div>
             <div class="photo-actions">
               <label for="fPhoto" class="btn-add-item photo-btn">+ Adicionar foto <span class="opt-tag">opcional</span></label>
@@ -671,6 +935,10 @@
               <label for="fObjective">Sobre você</label>
               <span class="field-hint">Já deixamos um modelo pronto — edite como quiser ou apague e escreva do seu jeito.</span>
               <textarea id="fObjective">Estudante do 2º ano do ensino médio, em busca da primeira oportunidade como jovem aprendiz para desenvolver habilidades administrativas e de atendimento.</textarea>
+              <button type="button" class="ai-btn" data-ai-flow="resumo">
+                <svg class="ai-sparkle" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 13.8 8.6 20 10.5 13.8 12.4 12 19l-1.8-6.6L4 10.5l6.2-1.9L12 2Z"/><path d="M19 15l.8 2.6L22 18.5l-2.2.9L19 22l-.8-2.6L16 18.5l2.2-.9L19 15Z"/></svg>
+                <span>Melhorar com IA</span>
+              </button>
             </div>
           </div>
 
@@ -688,6 +956,10 @@
             <div class="field">
               <label for="fExpDesc">Atividades e conquistas</label>
               <textarea id="fExpDesc" placeholder="Use verbos de ação e, se possível, resultados com números."></textarea>
+              <button type="button" class="ai-btn" data-ai-flow="experiencia">
+                <svg class="ai-sparkle" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 13.8 8.6 20 10.5 13.8 12.4 12 19l-1.8-6.6L4 10.5l6.2-1.9L12 2Z"/><path d="M19 15l.8 2.6L22 18.5l-2.2.9L19 22l-.8-2.6L16 18.5l2.2-.9L19 15Z"/></svg>
+                <span>Melhorar descrição com IA</span>
+              </button>
             </div>
             <button class="btn-add-item" id="addExpBtn" type="button">+ Adicionar experiência</button>
             <div class="repeater-list" id="expList"></div>
@@ -730,6 +1002,10 @@
               <button class="tag-add" id="addSkillBtn" type="button">Adicionar</button>
             </div>
             <div class="tag-list" id="skillList"></div>
+            <button type="button" class="ai-btn ai-btn-block" data-ai-flow="habilidades" style="margin-top:12px;">
+              <svg class="ai-sparkle" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 13.8 8.6 20 10.5 13.8 12.4 12 19l-1.8-6.6L4 10.5l6.2-1.9L12 2Z"/><path d="M19 15l.8 2.6L22 18.5l-2.2.9L19 22l-.8-2.6L16 18.5l2.2-.9L19 15Z"/></svg>
+              <span>Sugerir habilidades com IA</span>
+            </button>
           </div>
 
           <div class="field-group">
@@ -874,6 +1150,41 @@
     </div>
   </div>
 </footer>
+
+<!-- ============ IA — FAB de revisão geral ============ -->
+<button type="button" class="ai-fab" id="aiFab" data-ai-flow="revisao" aria-label="Revisar currículo com IA">
+  <span class="ai-fab-ring" aria-hidden="true"></span>
+  <span class="ai-fab-icon">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 13.8 8.6 20 10.5 13.8 12.4 12 19l-1.8-6.6L4 10.5l6.2-1.9L12 2Z"/><path d="M19 15l.8 2.6L22 18.5l-2.2.9L19 22l-.8-2.6L16 18.5l2.2-.9L19 15Z"/></svg>
+  </span>
+  <span class="ai-fab-label">Revisar com IA</span>
+</button>
+
+<!-- ============ IA — Modal reutilizável (perguntas / loading / resultado) ============ -->
+<div class="ai-modal-overlay" id="aiModalOverlay">
+  <div class="ai-modal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle">
+    <div class="ai-modal-head">
+      <div class="ai-modal-icon" id="aiModalIcon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 13.8 8.6 20 10.5 13.8 12.4 12 19l-1.8-6.6L4 10.5l6.2-1.9L12 2Z"/><path d="M19 15l.8 2.6L22 18.5l-2.2.9L19 22l-.8-2.6L16 18.5l2.2-.9L19 15Z"/></svg>
+      </div>
+      <div class="ai-modal-headtext">
+        <div class="ai-modal-title" id="aiModalTitle">Assistente de IA</div>
+        <div class="ai-modal-subtitle" id="aiModalSubtitle">—</div>
+        <div class="ai-modal-steps" id="aiModalStepsIndicator">
+          <span class="ai-modal-step-dot" data-dot="1"></span>
+          <span class="ai-modal-step-dot" data-dot="2"></span>
+          <span class="ai-modal-step-dot" data-dot="3"></span>
+        </div>
+      </div>
+      <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="ai-modal-body" id="aiModalBody"><!-- conteúdo dinâmico das etapas --></div>
+    <div class="ai-modal-foot" id="aiModalFoot"><!-- botões dinâmicos --></div>
+  </div>
+</div>
+
+<div class="ai-toast-container" id="aiToastContainer"></div>
+
 <script>
 (function () {
   "use strict";
@@ -1251,10 +1562,659 @@
     });
   }
 
+  // =========================================================================
+  // IA — Etapa 1: somente interface (botões, modais, perguntas, animações).
+  // Nenhuma chamada de API real acontece nesta etapa. Todo texto, sugestão
+  // e pontuação abaixo é gerado localmente (mock) apenas para validar a
+  // experiência antes da integração real com a API de IA.
+  // =========================================================================
+
+  function cap(s) {
+    s = (s || "").trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  }
+
+  function aiShuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  // ---------- Toast (feedback de sucesso) ----------
+  function aiShowToast(message) {
+    var container = $("aiToastContainer");
+    if (!container) return;
+    var toast = document.createElement("div");
+    toast.className = "ai-toast";
+    toast.innerHTML =
+      '<span class="ai-toast-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' +
+      "<span>" + escapeHTML(message) + "</span>";
+    container.appendChild(toast);
+    requestAnimationFrame(function () { toast.classList.add("show"); });
+    setTimeout(function () {
+      toast.classList.remove("show");
+      setTimeout(function () { toast.remove(); }, 350);
+    }, 3400);
+  }
+
+  // ---------- Bancos de dados simulados (mock) ----------
+  var AI_SUMMARY_TEMPLATES = {
+    formal: function (area, pontos) {
+      return [
+        "Estudante em busca de oportunidade como jovem aprendiz em " + area + ", com perfil " + pontos + ". Comprometido(a) em contribuir com dedicação e absorver novos conhecimentos no ambiente de trabalho.",
+        "Candidato(a) à vaga de jovem aprendiz em " + area + ", destacando-se por " + pontos + ". Busca uma primeira experiência profissional para desenvolver habilidades técnicas e comportamentais.",
+        "Em formação, com interesse em atuar na área de " + area + ". Possui como principais características " + pontos + " e está pronto(a) para aprender e crescer profissionalmente.",
+        "Perfil dedicado à busca da primeira oportunidade profissional em " + area + ". Reúne como diferenciais " + pontos + ", com disposição para seguir orientações e desenvolver novas competências."
+      ];
+    },
+    direto: function (area, pontos) {
+      return [
+        cap(area) + " é a área que busco como jovem aprendiz. Tenho " + pontos + " como meus pontos fortes e quero começar minha carreira com dedicação.",
+        "Busco minha primeira oportunidade em " + area + ". Sou " + pontos + " e quero aprender rápido e entregar resultados desde o início.",
+        "Quero uma vaga de jovem aprendiz em " + area + ". Meus diferenciais: " + pontos + ".",
+        "Foco em " + area + ". Levo para o time " + pontos + ", e disposição total para aprender no dia a dia."
+      ];
+    },
+    entusiasmado: function (area, pontos) {
+      return [
+        "Estou animado(a) para começar minha jornada profissional em " + area + "! Trago comigo " + pontos + " e muita vontade de aprender e fazer a diferença na equipe.",
+        "Sonho em conquistar minha primeira oportunidade como jovem aprendiz em " + area + ". Sou " + pontos + " e estou pronto(a) para abraçar novos desafios com energia.",
+        "Cheio(a) de vontade de aprender, busco minha primeira chance em " + area + ". Levo comigo " + pontos + " — e muito entusiasmo para crescer junto com a empresa.",
+        "Mal posso esperar para começar em " + area + "! Com " + pontos + ", quero somar com a equipe e aprender algo novo todos os dias."
+      ];
+    }
+  };
+
+  var AI_SKILL_BANK = {
+    comunicacao: ["Comunicação interpessoal", "Trabalho em equipe", "Escuta ativa", "Boa comunicação escrita"],
+    tecnicas: ["Pacote Office", "Excel básico", "Google Workspace", "Digitação rápida"],
+    organizacao: ["Organização", "Gestão do tempo", "Proatividade", "Atenção aos detalhes"],
+    atendimento: ["Atendimento ao público", "Resolução de problemas", "Empatia", "Paciência"]
+  };
+
+  // ---------- Estado e referências do modal ----------
+  var aiState = { flow: null, step: 1, data: {}, results: null, selectedIndex: 0 };
+  var aiOverlay = $("aiModalOverlay");
+  var aiModalTitleEl = $("aiModalTitle");
+  var aiModalSubtitleEl = $("aiModalSubtitle");
+  var aiModalIconEl = $("aiModalIcon");
+  var aiModalBodyEl = $("aiModalBody");
+  var aiModalFootEl = $("aiModalFoot");
+  var aiModalCloseBtn = $("aiModalClose");
+  var aiFabBtn = $("aiFab");
+
+  var AI_ICONS = {
+    resumo: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>',
+    experiencia: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg>',
+    habilidades: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 13.8 8.6 20 10.5 13.8 12.4 12 19l-1.8-6.6L4 10.5l6.2-1.9L12 2Z"/></svg>',
+    revisao: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+  };
+
+  var AI_META = {
+    resumo: { title: "Melhorar resumo com IA", subtitle: "Responda 3 perguntas rápidas para gerar opções de resumo." },
+    experiencia: { title: "Melhorar descrição com IA", subtitle: "Conte um pouco mais sobre essa experiência." },
+    habilidades: { title: "Sugerir habilidades com IA", subtitle: "Escolha os tipos de competência que quer destacar." },
+    revisao: { title: "Revisar currículo com IA", subtitle: "Uma análise rápida do que já está pronto e do que falta." }
+  };
+
+  // ---------- Abrir / fechar modal ----------
+  function aiOpenModal(flow) {
+    aiState = { flow: flow, step: 1, data: {}, results: null, selectedIndex: 0 };
+    aiModalTitleEl.textContent = AI_META[flow].title;
+    aiModalSubtitleEl.textContent = AI_META[flow].subtitle;
+    aiModalIconEl.innerHTML = AI_ICONS[flow];
+    document.body.classList.add("ai-modal-lock");
+    aiOverlay.classList.add("open");
+    aiRenderQuestionStep();
+    setTimeout(function () {
+      var firstField = aiModalBodyEl.querySelector("input, textarea");
+      if (firstField) firstField.focus();
+    }, 60);
+  }
+
+  function aiCloseModal() {
+    aiOverlay.classList.remove("open");
+    document.body.classList.remove("ai-modal-lock");
+  }
+
+  function aiRenderStepDots(step) {
+    document.querySelectorAll("#aiModalStepsIndicator .ai-modal-step-dot").forEach(function (dot) {
+      var n = parseInt(dot.getAttribute("data-dot"), 10);
+      dot.classList.remove("active", "done");
+      if (n < step) dot.classList.add("done");
+      else if (n === step) dot.classList.add("active");
+    });
+  }
+
+  function aiSetFoot(leftHtml, rightHtml) {
+    aiModalFootEl.innerHTML = (leftHtml || "") + '<div class="ai-modal-foot-right">' + (rightHtml || "") + "</div>";
+  }
+
+  // ---------- Controles reutilizáveis das telas de perguntas ----------
+  function aiWirePills(containerId) {
+    var container = $(containerId);
+    if (!container) return;
+    container.querySelectorAll(".ai-pill").forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        container.querySelectorAll(".ai-pill").forEach(function (p) { p.classList.remove("selected"); });
+        pill.classList.add("selected");
+      });
+    });
+  }
+  function aiGetSelectedPill(containerId) {
+    var container = $(containerId);
+    var sel = container && container.querySelector(".ai-pill.selected");
+    return sel ? sel.getAttribute("data-value") : null;
+  }
+  function aiCheckPill(value, label) {
+    return (
+      '<button type="button" class="ai-check-pill" data-value="' + value + '">' +
+        '<span class="box"></span><span>' + escapeHTML(label) + "</span>" +
+      "</button>"
+    );
+  }
+  function aiWireCheckPills(containerId) {
+    var container = $(containerId);
+    if (!container) return;
+    container.querySelectorAll(".ai-check-pill").forEach(function (pill) {
+      pill.addEventListener("click", function () { pill.classList.toggle("selected"); });
+    });
+  }
+  function aiGetSelectedChecks(containerId) {
+    var container = $(containerId);
+    var out = [];
+    if (!container) return out;
+    container.querySelectorAll(".ai-check-pill.selected").forEach(function (p) { out.push(p.getAttribute("data-value")); });
+    return out;
+  }
+
+  // ---------- Etapa 1 de cada fluxo: telas de perguntas ----------
+  function aiRenderQuestionStep() {
+    aiState.step = 1;
+    aiRenderStepDots(1);
+    var flow = aiState.flow;
+
+    if (flow === "resumo") {
+      var currentRole = $("fRole").value.trim();
+      aiModalBodyEl.innerHTML =
+        '<div class="ai-step active">' +
+          '<div class="ai-field">' +
+            '<label for="aiQArea">Qual área ou vaga você está buscando?</label>' +
+            '<input type="text" id="aiQArea" placeholder="Ex: Atendimento ao Cliente" value="' + escapeHTML(currentRole) + '">' +
+          "</div>" +
+          '<div class="ai-field">' +
+            '<label for="aiQPontos">Quais são seus pontos fortes?</label>' +
+            '<span class="ai-field-hint">Separe por vírgula. Ex: organização, comunicação, proatividade</span>' +
+            '<input type="text" id="aiQPontos" placeholder="Ex: organização, comunicação, proatividade">' +
+          "</div>" +
+          '<div class="ai-field">' +
+            '<label>Qual tom você prefere?</label>' +
+            '<div class="ai-pill-row" id="aiQTom">' +
+              '<button type="button" class="ai-pill selected" data-value="formal">Formal</button>' +
+              '<button type="button" class="ai-pill" data-value="direto">Direto</button>' +
+              '<button type="button" class="ai-pill" data-value="entusiasmado">Entusiasmado</button>' +
+            "</div>" +
+          "</div>" +
+        "</div>";
+      aiWirePills("aiQTom");
+      aiSetFoot(
+        '<button type="button" class="ai-btn-ghost-modal" id="aiCancelBtn">Cancelar</button>',
+        '<button type="button" class="ai-btn-primary-modal" id="aiNextBtn">Gerar sugestões</button>'
+      );
+      $("aiNextBtn").addEventListener("click", function () {
+        var area = $("aiQArea").value.trim() || "área administrativa e de atendimento";
+        var pontosRaw = $("aiQPontos").value.trim();
+        var pontos = pontosRaw
+          ? pontosRaw.split(",").map(function (s) { return s.trim(); }).filter(Boolean).join(", ")
+          : "organização, comunicação e vontade de aprender";
+        var tom = aiGetSelectedPill("aiQTom") || "formal";
+        aiState.data = { area: area, pontos: pontos, tom: tom };
+        aiRunLoading();
+      });
+    } else if (flow === "experiencia") {
+      var currentDesc = $("fExpDesc").value.trim();
+      aiModalBodyEl.innerHTML =
+        '<div class="ai-step active">' +
+          '<div class="ai-field">' +
+            '<label for="aiQAtividades">Quais eram suas principais atividades?</label>' +
+            '<span class="ai-field-hint">Pode escrever de forma simples — a IA ajuda a organizar o texto.</span>' +
+            '<textarea id="aiQAtividades" placeholder="Ex: ajudava a organizar arquivos e atender clientes por telefone">' + escapeHTML(currentDesc) + "</textarea>" +
+          "</div>" +
+          '<div class="ai-field">' +
+            '<label for="aiQConquista">Teve algum resultado ou conquista? <span class="opt-tag" style="color:#8992AC; background:#EEF1F9; border-color:#DEE3F0;">opcional</span></label>' +
+            '<span class="ai-field-hint">Número, prêmio, elogio — qualquer coisa que mostre impacto.</span>' +
+            '<input type="text" id="aiQConquista" placeholder="Ex: recebi elogio da supervisora pela organização do setor">' +
+          "</div>" +
+        "</div>";
+      aiSetFoot(
+        '<button type="button" class="ai-btn-ghost-modal" id="aiCancelBtn">Cancelar</button>',
+        '<button type="button" class="ai-btn-primary-modal" id="aiNextBtn">Melhorar descrição</button>'
+      );
+      $("aiNextBtn").addEventListener("click", function () {
+        var atividades = $("aiQAtividades").value.trim();
+        if (!atividades) { $("aiQAtividades").focus(); return; }
+        var conquista = $("aiQConquista").value.trim();
+        aiState.data = { atividades: atividades, conquista: conquista };
+        aiRunLoading();
+      });
+    } else if (flow === "habilidades") {
+      aiModalBodyEl.innerHTML =
+        '<div class="ai-step active">' +
+          '<div class="ai-field">' +
+            '<label>Que tipo de habilidade você quer destacar?</label>' +
+            '<span class="ai-field-hint">Selecione uma ou mais opções.</span>' +
+            '<div class="ai-check-row" id="aiQCategorias">' +
+              aiCheckPill("comunicacao", "Comunicação") +
+              aiCheckPill("tecnicas", "Softwares / ferramentas") +
+              aiCheckPill("organizacao", "Organização") +
+              aiCheckPill("atendimento", "Atendimento") +
+            "</div>" +
+          "</div>" +
+        "</div>";
+      aiWireCheckPills("aiQCategorias");
+      aiSetFoot(
+        '<button type="button" class="ai-btn-ghost-modal" id="aiCancelBtn">Cancelar</button>',
+        '<button type="button" class="ai-btn-primary-modal" id="aiNextBtn">Sugerir habilidades</button>'
+      );
+      $("aiNextBtn").addEventListener("click", function () {
+        var cats = aiGetSelectedChecks("aiQCategorias");
+        if (cats.length === 0) cats = ["comunicacao", "tecnicas", "organizacao", "atendimento"];
+        aiState.data = { categorias: cats };
+        aiRunLoading();
+      });
+    } else if (flow === "revisao") {
+      aiModalBodyEl.innerHTML =
+        '<div class="ai-step active">' +
+          '<div class="ai-field">' +
+            '<label>O que é mais importante pra você agora?</label>' +
+            '<div class="ai-pill-row" id="aiQFoco">' +
+              '<button type="button" class="ai-pill selected" data-value="completo">Deixar mais completo</button>' +
+              '<button type="button" class="ai-pill" data-value="textos">Melhorar os textos</button>' +
+              '<button type="button" class="ai-pill" data-value="entrevista">Aumentar chances de entrevista</button>' +
+            "</div>" +
+          "</div>" +
+        "</div>";
+      aiWirePills("aiQFoco");
+      aiSetFoot(
+        '<button type="button" class="ai-btn-ghost-modal" id="aiCancelBtn">Cancelar</button>',
+        '<button type="button" class="ai-btn-primary-modal" id="aiNextBtn">Analisar currículo</button>'
+      );
+      $("aiNextBtn").addEventListener("click", function () {
+        aiState.data = { foco: aiGetSelectedPill("aiQFoco") || "completo" };
+        aiRunLoading();
+      });
+    }
+
+    var cancelBtn = $("aiCancelBtn");
+    if (cancelBtn) cancelBtn.addEventListener("click", aiCloseModal);
+  }
+
+  // ---------- Etapa 2 de cada fluxo: tela de carregamento (animada) ----------
+  function aiRunLoading() {
+    aiState.step = 2;
+    aiRenderStepDots(2);
+    aiModalFootEl.innerHTML = "";
+
+    var flow = aiState.flow;
+    var statusesByFlow = {
+      resumo: ["Analisando suas respostas...", "Escrevendo opções de resumo...", "Ajustando o tom escolhido..."],
+      experiencia: ["Lendo suas atividades...", "Organizando em tópicos...", "Finalizando a descrição..."],
+      habilidades: ["Olhando o cargo desejado...", "Cruzando com as categorias escolhidas...", "Montando sugestões..."],
+      revisao: ["Verificando dados de contato...", "Analisando resumo profissional...", "Conferindo formação e experiência...", "Checando competências e idiomas...", "Calculando pontuação geral..."]
+    };
+    var statuses = statusesByFlow[flow];
+    var showChecklist = flow === "revisao";
+
+    var checklistHtml = "";
+    if (showChecklist) {
+      checklistHtml =
+        '<div class="ai-check-list" id="aiCheckList">' +
+        statuses.map(function (s, i) {
+          return (
+            '<div class="ai-check-item" data-idx="' + i + '">' +
+              '<span class="ai-check-circle"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' +
+              "<span>" + escapeHTML(s) + "</span>" +
+            "</div>"
+          );
+        }).join("") +
+        "</div>";
+    }
+
+    aiModalBodyEl.innerHTML =
+      '<div class="ai-step active">' +
+        '<div class="ai-loading">' +
+          '<div class="ai-loading-ring"></div>' +
+          '<div class="ai-loading-status" id="aiLoadingStatus">' + escapeHTML(statuses[0]) + "</div>" +
+          '<div class="ai-loading-sub">Isso leva só alguns segundos.</div>' +
+          '<div class="ai-loading-bar-track"><div class="ai-loading-bar-fill" id="aiLoadingBar"></div></div>' +
+          checklistHtml +
+        "</div>" +
+      "</div>";
+
+    var totalMs = showChecklist ? statuses.length * 480 : 1700;
+    var stepMs = totalMs / statuses.length;
+    var statusEl = $("aiLoadingStatus");
+    var barEl = $("aiLoadingBar");
+    var checkItems = showChecklist ? document.querySelectorAll("#aiCheckList .ai-check-item") : null;
+
+    statuses.forEach(function (s, i) {
+      setTimeout(function () {
+        if (statusEl) statusEl.textContent = s;
+        if (barEl) barEl.style.width = Math.round(((i + 1) / statuses.length) * 100) + "%";
+        if (checkItems && checkItems[i]) checkItems[i].classList.add("done");
+      }, i * stepMs);
+    });
+
+    setTimeout(function () { aiGenerateAndShowResults(); }, totalMs + 260);
+  }
+
+  // ---------- Geração simulada (mock) dos resultados ----------
+  function aiBuildExperienceOptions(raw, conquista) {
+    var base = (raw || "").trim().replace(/\.$/, "");
+    if (!base) base = "Auxiliei nas atividades do dia a dia do setor, dando suporte à equipe";
+    var conquistaTxt = (conquista || "").trim().replace(/\.$/, "");
+    var closers = [
+      "Contribuí para deixar os processos do setor mais organizados.",
+      "Ajudei a manter o fluxo de trabalho da equipe mais eficiente.",
+      "Colaborei para que as tarefas do dia a dia fossem cumpridas com qualidade."
+    ];
+    var closer = closers[Math.floor(Math.random() * closers.length)];
+
+    var opt1 = "• " + cap(base) + ".";
+    var opt2 = "• " + cap(base) + ".\n• " + (conquistaTxt ? cap(conquistaTxt) + "." : closer);
+    var opt3 =
+      "• " + cap(base) + ", sempre seguindo as orientações da equipe.\n" +
+      "• Mantive organização e atenção aos detalhes nas tarefas do dia a dia." +
+      (conquistaTxt ? "\n• " + cap(conquistaTxt) + "." : "\n• " + closer);
+
+    return [
+      { label: "Conciso", text: opt1 },
+      { label: "Com resultado", text: opt2 },
+      { label: "Detalhado", text: opt3 }
+    ];
+  }
+
+  function aiBuildSkillSuggestions(categorias) {
+    var pool = [];
+    categorias.forEach(function (cat) {
+      (AI_SKILL_BANK[cat] || []).forEach(function (s) {
+        if (pool.indexOf(s) === -1) pool.push(s);
+      });
+    });
+    pool = pool.filter(function (s) { return skills.indexOf(s) === -1; });
+    return aiShuffle(pool).slice(0, 8);
+  }
+
+  function aiComputeReview() {
+    var name = $("fName").value.trim();
+    var city = $("fCity").value.trim();
+    var state = $("fState").value.trim();
+    var phone = $("fPhone").value.trim();
+    var email = $("fEmail").value.trim();
+    var role = $("fRole").value.trim();
+    var objective = $("fObjective").value.trim();
+    var course = $("fCourse").value.trim();
+    var school = $("fSchool").value.trim();
+    var hasExp = $("cvExpBlock").style.display !== "none";
+    var hasCert = $("cvCertBlock").style.display !== "none";
+    var hasLang = $("cvLangBlock").style.display !== "none";
+    var skillCount = skills.length;
+
+    var score = 0;
+    var warnTips = [];
+    var okTips = [];
+
+    if (name) { score += 10; okTips.push({ status: "ok", title: "Nome preenchido", desc: "Seu nome já aparece no topo do currículo.", jumpTo: null }); }
+    else warnTips.push({ status: "warn", title: "Adicione seu nome completo", desc: "É a primeira coisa que o recrutador vê no currículo.", jumpTo: "fName" });
+
+    if (city && state && phone && email) { score += 20; }
+    else warnTips.push({ status: "warn", title: "Complete seus dados de contato", desc: "Cidade, estado, telefone e e-mail ajudam o recrutador a te encontrar.", jumpTo: "fPhone" });
+
+    if (role) { score += 10; }
+    else warnTips.push({ status: "warn", title: "Defina o cargo ou área de interesse", desc: "Isso deixa claro para qual tipo de vaga você está se candidatando.", jumpTo: "fRole" });
+
+    if (objective.length > 40) { score += 20; okTips.push({ status: "ok", title: "Resumo profissional completo", desc: "Seu resumo já está com um bom nível de detalhe.", jumpTo: null }); }
+    else warnTips.push({ status: "warn", title: "Capriche no resumo profissional", desc: "Um resumo mais completo ajuda o recrutador a entender seu perfil rápido.", jumpTo: "fObjective" });
+
+    if (course && school) { score += 15; }
+    else warnTips.push({ status: "warn", title: "Complete a formação acadêmica", desc: "Escola e curso são essenciais, mesmo para quem ainda está estudando.", jumpTo: "fCourse" });
+
+    if (skillCount >= 3) { score += 15; okTips.push({ status: "ok", title: "Boa lista de competências", desc: "Você já tem " + skillCount + " competência(s) adicionada(s).", jumpTo: null }); }
+    else warnTips.push({ status: "warn", title: "Adicione mais competências", desc: "Currículos com pelo menos 3 a 5 habilidades tendem a se destacar mais.", jumpTo: "fSkillInput" });
+
+    if (hasExp || hasCert || hasLang) { score += 10; }
+    else warnTips.push({ status: "warn", title: "Inclua experiência, curso ou idioma", desc: "Mesmo sem emprego formal, cursos livres e idiomas mostram iniciativa.", jumpTo: "fCertName" });
+
+    return { score: Math.min(100, score), tips: okTips.concat(warnTips) };
+  }
+
+  function aiGenerateAndShowResults() {
+    var flow = aiState.flow;
+    if (flow === "resumo") {
+      var d = aiState.data;
+      var pool = (AI_SUMMARY_TEMPLATES[d.tom] || AI_SUMMARY_TEMPLATES.formal)(d.area, d.pontos);
+      aiState.results = aiShuffle(pool).slice(0, 3).map(function (text, i) {
+        return { label: ["Opção 1", "Opção 2", "Opção 3"][i], text: text };
+      });
+      aiRenderResumoResults();
+    } else if (flow === "experiencia") {
+      var d2 = aiState.data;
+      aiState.results = aiBuildExperienceOptions(d2.atividades, d2.conquista);
+      aiRenderExperienciaResults();
+    } else if (flow === "habilidades") {
+      var d3 = aiState.data;
+      aiState.results = aiBuildSkillSuggestions(d3.categorias);
+      aiRenderHabilidadesResults();
+    } else if (flow === "revisao") {
+      aiState.results = aiComputeReview();
+      aiRenderRevisaoResults();
+    }
+  }
+
+  // ---------- Etapa 3 de cada fluxo: telas de resultado ----------
+  function aiRenderSelectableOptions(applyLabel, onRegenerate, onApply) {
+    aiState.step = 3;
+    aiRenderStepDots(3);
+    aiState.selectedIndex = 0;
+
+    var cardsHtml = aiState.results.map(function (opt, i) {
+      return (
+        '<div class="ai-option-card' + (i === 0 ? " selected" : "") + '" data-idx="' + i + '">' +
+          '<div class="ai-option-head">' +
+            '<span class="ai-option-badge">' + escapeHTML(opt.label) + "</span>" +
+            '<span class="ai-option-radio"></span>' +
+          "</div>" +
+          '<div class="ai-option-text">' + escapeHTML(opt.text) + "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    aiModalBodyEl.innerHTML = '<div class="ai-step active">' + cardsHtml + "</div>";
+
+    aiModalBodyEl.querySelectorAll(".ai-option-card").forEach(function (card) {
+      card.addEventListener("click", function () {
+        aiModalBodyEl.querySelectorAll(".ai-option-card").forEach(function (c) { c.classList.remove("selected"); });
+        card.classList.add("selected");
+        aiState.selectedIndex = parseInt(card.getAttribute("data-idx"), 10);
+      });
+    });
+
+    aiSetFoot(
+      '<button type="button" class="ai-btn-ghost-modal" id="aiRegenBtn">Gerar novamente</button>',
+      '<button type="button" class="ai-btn-primary-modal" id="aiApplyBtn">' + escapeHTML(applyLabel) + "</button>"
+    );
+    $("aiRegenBtn").addEventListener("click", onRegenerate);
+    $("aiApplyBtn").addEventListener("click", onApply);
+  }
+
+  function aiRenderResumoResults() {
+    aiRenderSelectableOptions(
+      "Usar este resumo",
+      function () { aiRunLoading(); },
+      function () {
+        $("fObjective").value = aiState.results[aiState.selectedIndex].text;
+        render();
+        aiCloseModal();
+        aiShowToast("Resumo profissional atualizado!");
+      }
+    );
+  }
+
+  function aiRenderExperienciaResults() {
+    aiRenderSelectableOptions(
+      "Usar esta versão",
+      function () { aiRunLoading(); },
+      function () {
+        $("fExpDesc").value = aiState.results[aiState.selectedIndex].text;
+        aiCloseModal();
+        aiShowToast("Descrição da experiência atualizada!");
+      }
+    );
+  }
+
+  function aiRenderHabilidadesResults() {
+    aiState.step = 3;
+    aiRenderStepDots(3);
+    var pool = aiState.results;
+
+    if (!pool || pool.length === 0) {
+      aiModalBodyEl.innerHTML =
+        '<div class="ai-step active"><p style="font-size:13.5px; color:var(--ink-soft); line-height:1.6;">' +
+        "Não encontramos novas sugestões — parece que você já adicionou as principais competências dessas categorias. Volte e tente outra categoria." +
+        "</p></div>";
+      aiSetFoot('<button type="button" class="ai-btn-ghost-modal" id="aiBackBtn">Voltar</button>', "");
+      $("aiBackBtn").addEventListener("click", aiRenderQuestionStep);
+      return;
+    }
+
+    var chipsHtml = pool.map(function (s) {
+      return (
+        '<button type="button" class="ai-check-pill" data-skill="' + escapeHTML(s) + '">' +
+          '<span class="box"></span><span>' + escapeHTML(s) + "</span>" +
+        "</button>"
+      );
+    }).join("");
+
+    aiModalBodyEl.innerHTML =
+      '<div class="ai-step active">' +
+        '<p style="font-size:13px; color:var(--ink-soft); margin-bottom:12px;">Toque para selecionar as competências que combinam com você:</p>' +
+        '<div class="ai-skill-suggest" id="aiSkillSuggest">' + chipsHtml + "</div>" +
+      "</div>";
+
+    aiModalBodyEl.querySelectorAll("#aiSkillSuggest .ai-check-pill").forEach(function (chip) {
+      chip.addEventListener("click", function () { chip.classList.toggle("selected"); });
+    });
+
+    aiSetFoot(
+      '<button type="button" class="ai-btn-ghost-modal" id="aiRegenBtn">Sugerir outras</button>',
+      '<button type="button" class="ai-btn-primary-modal" id="aiApplyBtn">Adicionar selecionadas</button>'
+    );
+    $("aiRegenBtn").addEventListener("click", function () { aiRunLoading(); });
+    $("aiApplyBtn").addEventListener("click", function () {
+      var chosen = [];
+      aiModalBodyEl.querySelectorAll("#aiSkillSuggest .ai-check-pill.selected").forEach(function (c) {
+        chosen.push(c.getAttribute("data-skill"));
+      });
+      if (chosen.length === 0) { aiCloseModal(); return; }
+      chosen.forEach(function (s) { if (skills.indexOf(s) === -1) skills.push(s); });
+      renderSkills();
+      aiCloseModal();
+      aiShowToast(chosen.length + " competência(s) adicionada(s)!");
+    });
+  }
+
+  function aiRenderRevisaoResults() {
+    aiState.step = 3;
+    aiRenderStepDots(3);
+    var result = aiState.results;
+    var score = result.score;
+    var radius = 46;
+    var circumference = Math.round(2 * Math.PI * radius * 100) / 100;
+    var offset = circumference - (score / 100) * circumference;
+
+    var iconOk = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    var iconWarn = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>';
+
+    var tipsHtml = result.tips.map(function (tip) {
+      return (
+        '<div class="ai-tip">' +
+          '<span class="ai-tip-icon ' + (tip.status === "ok" ? "ok" : "warn") + '">' + (tip.status === "ok" ? iconOk : iconWarn) + "</span>" +
+          "<div>" +
+            '<div class="ai-tip-title">' + escapeHTML(tip.title) + "</div>" +
+            '<div class="ai-tip-desc">' + escapeHTML(tip.desc) + "</div>" +
+            (tip.jumpTo ? '<a href="javascript:void(0)" class="ai-tip-jump" data-jump="' + tip.jumpTo + '">Editar este campo →</a>' : "") +
+          "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    aiModalBodyEl.innerHTML =
+      '<div class="ai-step active">' +
+        '<div class="ai-score-wrap">' +
+          '<svg width="112" height="112" viewBox="0 0 112 112" class="ai-score-ring">' +
+            '<circle cx="56" cy="56" r="' + radius + '" stroke="#EEF1F9" stroke-width="10" fill="none"/>' +
+            '<circle cx="56" cy="56" r="' + radius + '" stroke="url(#aiScoreGrad)" stroke-width="10" fill="none" stroke-linecap="round" ' +
+              'stroke-dasharray="' + circumference + '" stroke-dashoffset="' + circumference + '" transform="rotate(-90 56 56)" id="aiScoreCircle"/>' +
+            '<defs><linearGradient id="aiScoreGrad" x1="0" y1="0" x2="1" y2="1">' +
+              '<stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#2F5FFF"/>' +
+            "</linearGradient></defs>" +
+            '<text x="56" y="63" text-anchor="middle" class="ai-score-value">' + score + "</text>" +
+          "</svg>" +
+          '<div class="ai-score-label">Pontuação do currículo</div>' +
+        "</div>" +
+        tipsHtml +
+      "</div>";
+
+    setTimeout(function () {
+      var circle = $("aiScoreCircle");
+      if (circle) circle.style.strokeDashoffset = String(offset);
+    }, 80);
+
+    aiModalBodyEl.querySelectorAll(".ai-tip-jump").forEach(function (link) {
+      link.addEventListener("click", function () {
+        var id = link.getAttribute("data-jump");
+        var el = $(id);
+        aiCloseModal();
+        if (el) {
+          setTimeout(function () {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.focus({ preventScroll: true });
+          }, 250);
+        }
+      });
+    });
+
+    aiSetFoot("", '<button type="button" class="ai-btn-primary-modal" id="aiDoneBtn">Concluir</button>');
+    $("aiDoneBtn").addEventListener("click", aiCloseModal);
+  }
+
+  // ---------- Conectar os botões de IA e o FAB ----------
+  document.querySelectorAll("[data-ai-flow]").forEach(function (btn) {
+    btn.addEventListener("click", function () { aiOpenModal(btn.getAttribute("data-ai-flow")); });
+  });
+  if (aiModalCloseBtn) aiModalCloseBtn.addEventListener("click", aiCloseModal);
+  if (aiOverlay) {
+    aiOverlay.addEventListener("click", function (e) { if (e.target === aiOverlay) aiCloseModal(); });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && aiOverlay && aiOverlay.classList.contains("open")) aiCloseModal();
+  });
+
+  function aiUpdateFabVisibility() {
+    if (!aiFabBtn) return;
+    if (window.scrollY > 420) aiFabBtn.classList.add("visible");
+    else aiFabBtn.classList.remove("visible");
+  }
+  window.addEventListener("scroll", aiUpdateFabVisibility, { passive: true });
+
   // ---------- Inicialização ----------
   render();
   renderSkills();
   renderLangs();
+  aiUpdateFabVisibility();
 })();
 </script>
 </body>
